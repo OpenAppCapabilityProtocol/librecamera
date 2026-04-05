@@ -64,6 +64,30 @@
                 <action android:name="android.media.action.VIDEO_CAPTURE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
+
+            <!-- OACP: Take photo with front camera -->
+            <intent-filter>
+                <action android:name="${applicationId}.oacp.ACTION_TAKE_PHOTO_FRONT_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- OACP: Take photo with rear camera -->
+            <intent-filter>
+                <action android:name="${applicationId}.oacp.ACTION_TAKE_PHOTO_REAR_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- OACP: Start video recording with front camera -->
+            <intent-filter>
+                <action android:name="${applicationId}.oacp.ACTION_START_VIDEO_RECORDING_FRONT_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+
+            <!-- OACP: Start video recording with rear camera -->
+            <intent-filter>
+                <action android:name="${applicationId}.oacp.ACTION_START_VIDEO_RECORDING_REAR_CAMERA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
         <!--<activity-alias

@@ -1,0 +1,179 @@
+{
+  "oacpVersion": "0.3",
+  "appId": "__APPLICATION_ID__",
+  "displayName": "Libre Camera",
+  "appDomains": ["camera"],
+  "appKeywords": ["camera", "photo", "picture", "video", "recording", "selfie", "capture"],
+  "appAliases": ["libre camera", "camera", "camera app"],
+  "capabilities": [
+    {
+      "id": "take_photo_front_camera",
+      "description": "Take a selfie with the front camera after an optional countdown.",
+      "domain": "camera",
+      "aliases": [
+        "take a selfie", "selfie", "snap a selfie",
+        "front camera photo", "front camera shot"
+      ],
+      "examples": [
+        "take a selfie",
+        "take a selfie in 5 seconds",
+        "front camera photo"
+      ],
+      "keywords": ["selfie", "front", "front camera"],
+      "disambiguationHints": [
+        "ONLY use this when the user explicitly says selfie or front camera.",
+        "Do NOT use for generic 'take a photo' — that should go to rear camera."
+      ],
+      "parameters": [
+        {
+          "name": "duration_seconds",
+          "type": "integer",
+          "required": false,
+          "description": "Countdown before taking the photo.",
+          "extractionHint": "Extract the countdown duration in seconds. Look for any number followed by 'seconds' or time words, even if preceded by 'and' or 'in' (STT may mishear 'in' as 'and'). Examples: '5 seconds' → 5, 'and 3 seconds' → 3, 'in 10 seconds' → 10, '2 minutes' → 120, 'half a minute' → 30. Return null if no duration/countdown/timer is mentioned.",
+          "examples": [3, 5, 10],
+          "minimum": 1,
+          "maximum": 30
+        }
+      ],
+      "confirmation": "never",
+      "executionMessage": "Opening front camera to take a photo.",
+      "visibility": "public",
+      "requiresForeground": true,
+      "completionMode": "foreground_handoff",
+      "sensitivity": "low",
+      "sideEffects": "Saves a new photo to the device gallery.",
+      "idempotent": false,
+      "invoke": {
+        "android": {
+          "type": "activity",
+          "action": "__APPLICATION_ID__.oacp.ACTION_TAKE_PHOTO_FRONT_CAMERA",
+          "extrasMapping": {
+            "duration_seconds": "EXTRA_DURATION_SECONDS"
+          }
+        }
+      }
+    },
+    {
+      "id": "take_photo_rear_camera",
+      "description": "Open Libre Camera and take a photo with the rear camera after an optional countdown.",
+      "domain": "camera",
+      "aliases": [
+        "take a photo", "take a picture", "take photo", "capture a photo",
+        "snap a photo", "snap a picture", "capture a picture",
+        "rear camera photo", "back camera photo", "back camera shot"
+      ],
+      "examples": [
+        "take a photo",
+        "take a picture",
+        "capture a photo in 4 seconds",
+        "take a rear camera photo"
+      ],
+      "keywords": ["camera", "photo", "picture", "capture", "snap", "rear", "back"],
+      "disambiguationHints": [
+        "This is the DEFAULT photo action. Use for any generic photo request.",
+        "Use when the user says 'take a photo', 'take a picture', 'capture', 'snap'.",
+        "Only use front camera instead when the user explicitly says 'selfie' or 'front camera'."
+      ],
+      "parameters": [
+        {
+          "name": "duration_seconds",
+          "type": "integer",
+          "required": false,
+          "description": "Countdown before taking the photo.",
+          "extractionHint": "Extract the countdown duration in seconds. Look for any number followed by 'seconds' or time words, even if preceded by 'and' or 'in' (STT may mishear 'in' as 'and'). Examples: '5 seconds' → 5, 'and 3 seconds' → 3, 'in 10 seconds' → 10, '2 minutes' → 120, 'half a minute' → 30. Return null if no duration/countdown/timer is mentioned.",
+          "examples": [3, 5, 10],
+          "minimum": 1,
+          "maximum": 30
+        }
+      ],
+      "confirmation": "never",
+      "executionMessage": "Opening rear camera to take a photo.",
+      "visibility": "public",
+      "requiresForeground": true,
+      "completionMode": "foreground_handoff",
+      "sensitivity": "low",
+      "sideEffects": "Saves a new photo to the device gallery.",
+      "idempotent": false,
+      "invoke": {
+        "android": {
+          "type": "activity",
+          "action": "__APPLICATION_ID__.oacp.ACTION_TAKE_PHOTO_REAR_CAMERA",
+          "extrasMapping": {
+            "duration_seconds": "EXTRA_DURATION_SECONDS"
+          }
+        }
+      }
+    },
+    {
+      "id": "start_video_recording_front_camera",
+      "description": "Start recording a selfie video with the front camera.",
+      "domain": "camera",
+      "aliases": [
+        "record a selfie video", "selfie video",
+        "front camera video", "front camera recording"
+      ],
+      "examples": [
+        "record a selfie video",
+        "start a front camera recording"
+      ],
+      "keywords": ["selfie", "front", "front camera", "selfie video"],
+      "disambiguationHints": [
+        "ONLY use when the user explicitly says selfie video or front camera video.",
+        "Do NOT use for generic 'record a video' — that should go to rear camera."
+      ],
+      "parameters": [],
+      "confirmation": "never",
+      "executionMessage": "Opening front camera to start recording.",
+      "visibility": "public",
+      "requiresForeground": true,
+      "completionMode": "foreground_handoff",
+      "sensitivity": "low",
+      "sideEffects": "Starts recording video, saved to device gallery when stopped.",
+      "idempotent": false,
+      "invoke": {
+        "android": {
+          "type": "activity",
+          "action": "__APPLICATION_ID__.oacp.ACTION_START_VIDEO_RECORDING_FRONT_CAMERA"
+        }
+      }
+    },
+    {
+      "id": "start_video_recording_rear_camera",
+      "description": "Open Libre Camera and start recording video with the rear camera.",
+      "domain": "camera",
+      "aliases": [
+        "record a video", "start recording video", "start video recording",
+        "film a video", "capture video",
+        "rear camera video", "back camera video"
+      ],
+      "examples": [
+        "record a video",
+        "start recording video",
+        "start video recording",
+        "film something"
+      ],
+      "keywords": ["video", "recording", "record", "film", "capture video", "rear", "back"],
+      "disambiguationHints": [
+        "This is the DEFAULT video action. Use for any generic video request.",
+        "Use when the user says 'record a video', 'start recording video', 'film'.",
+        "Only use front camera instead when the user explicitly says 'selfie video' or 'front camera'."
+      ],
+      "parameters": [],
+      "confirmation": "never",
+      "executionMessage": "Opening rear camera to start recording.",
+      "visibility": "public",
+      "requiresForeground": true,
+      "completionMode": "foreground_handoff",
+      "sensitivity": "low",
+      "sideEffects": "Starts recording video, saved to device gallery when stopped.",
+      "idempotent": false,
+      "invoke": {
+        "android": {
+          "type": "activity",
+          "action": "__APPLICATION_ID__.oacp.ACTION_START_VIDEO_RECORDING_REAR_CAMERA"
+        }
+      }
+    }
+  ]
+}

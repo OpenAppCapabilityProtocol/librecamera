@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:librecamera/src/app.dart';
+import 'package:librecamera/src/oacp/oacp_command_service.dart';
 import 'package:librecamera/src/utils/preferences.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -26,6 +27,7 @@ Future<void> main() async {
   }
 
   await Preferences.init();
+  await OacpCommandService.instance.initialize();
 
   if (Preferences.getMaximumScreenBrightness()) {
     await ScreenBrightness().setApplicationScreenBrightness(1);

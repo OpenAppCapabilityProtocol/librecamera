@@ -15,6 +15,7 @@ import 'package:librecamera/src/models/media_file.dart';
 import 'package:librecamera/src/pages/settings_page.dart';
 import 'package:librecamera/src/provider/theme_provider.dart';
 import 'package:librecamera/src/utils/preferences.dart';
+import 'package:librecamera/src/oacp/oacp_command_service.dart';
 import 'package:librecamera/src/volume_button_listener.dart';
 import 'package:librecamera/src/widgets/capture_control.dart';
 import 'package:librecamera/src/widgets/exposure.dart';
@@ -105,19 +106,29 @@ class _CameraPageState extends State<CameraPage>
   qr.Barcode? result;
   qr.QRViewController? qrController;*/
 
+  // OACP
+  StreamSubscription<OacpCommand>? _oacpCommandSubscription;
+  static const _defaultOacpPhotoCountdownSeconds = 3;
+  final Set<String> _handledOacpRequestIds = <String>{};
+  int? _activePhotoCountdownSeconds;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
+    _oacpCommandSubscription = OacpCommandService.instance.commands.listen((
+      command,
+    ) {
+      if (_handledOacpRequestIds.add(command.requestId)) {
+        unawaited(_executeOacpCommand(command));
+      }
+    });
+
     /*final methodChannel = AndroidMethodChannel();
     methodChannel.disableIntentCamera(disable: true);*/
 
-    unawaited(
-      onNewCameraSelected(
-        cameras[Preferences.getStartWithRearCamera() ? 0 : 1],
-      ),
-    );
+    unawaited(_initializeCameraPage());
   }
 
   // In order to get hot reload to work we need to pause the camera if the platform
@@ -134,6 +145,7 @@ class _CameraPageState extends State<CameraPage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_videoPlayerController?.dispose());
+    unawaited(_oacpCommandSubscription?.cancel());
     _zoomSliderHideTimer?.cancel();
     //qrController?.dispose();
 
@@ -318,21 +330,19 @@ class _CameraPageState extends State<CameraPage>
   }
 
   Widget _timerWidget() {
+    final timerDuration =
+        _activePhotoCountdownSeconds ?? Preferences.getTimerDuration();
     final minuteAmount =
-        (Preferences.getTimerDuration() - _timerStopwatch.elapsed.inSeconds) /
-        60;
+        (timerDuration - _timerStopwatch.elapsed.inSeconds) / 60;
     final minute = minuteAmount.floor();
 
-    return Duration(seconds: Preferences.getTimerDuration()).inSeconds > 0 &&
-            _timerStopwatch.elapsedTicks > 1
+    return timerDuration > 0 && _timerStopwatch.elapsedTicks > 1
         ? Center(
             child: IgnorePointer(
               child: Text(
-                Preferences.getTimerDuration() -
-                            _timerStopwatch.elapsed.inSeconds <
-                        60
-                    ? '${Preferences.getTimerDuration() - _timerStopwatch.elapsed.inSeconds}s'
-                    : '${minute}m ${(Preferences.getTimerDuration() - _timerStopwatch.elapsed.inSeconds) % 60}s',
+                timerDuration - _timerStopwatch.elapsed.inSeconds < 60
+                    ? '${timerDuration - _timerStopwatch.elapsed.inSeconds}s'
+                    : '${minute}m ${(timerDuration - _timerStopwatch.elapsed.inSeconds) % 60}s',
                 style: const TextStyle(
                   color: Colors.red,
                   fontSize: 64,
@@ -929,8 +939,12 @@ class _CameraPageState extends State<CameraPage>
   }
 
   //Camera controls
-  Future<XFile?> takePicture() async {
+  Future<XFile?> takePicture({int? countdownOverrideSeconds}) async {
+    final countdownSeconds =
+        countdownOverrideSeconds ?? Preferences.getTimerDuration();
+    debugPrint('OacpDart: takePicture countdownSeconds=$countdownSeconds override=$countdownOverrideSeconds');
     setState(() {
+      _activePhotoCountdownSeconds = countdownSeconds;
       Timer.periodic(
         const Duration(milliseconds: 500),
         (Timer t) => setState(() {}),
@@ -939,10 +953,11 @@ class _CameraPageState extends State<CameraPage>
     });
 
     await Future<void>.delayed(
-      Duration(seconds: Preferences.getTimerDuration()),
+      Duration(seconds: countdownSeconds),
     );
 
     setState(() {
+      _activePhotoCountdownSeconds = null;
       _timerStopwatch
         ..stop()
         ..reset();
@@ -1183,6 +1198,89 @@ class _CameraPageState extends State<CameraPage>
       }
       rethrow;
     }
+  }
+
+  // OACP command execution
+
+  Future<void> _initializeCameraPage() async {
+    debugPrint('OacpDart: _initializeCameraPage start');
+    await onNewCameraSelected(
+      _cameraDescriptionForRearSelection(
+        Preferences.getStartWithRearCamera(),
+      ),
+    );
+    debugPrint('OacpDart: camera initialized, checking pending command');
+
+    final pendingCommand =
+        OacpCommandService.instance.consumePendingCommand();
+    debugPrint('OacpDart: pendingCommand=${pendingCommand?.type}');
+    if (pendingCommand != null) {
+      await _executeOacpCommand(pendingCommand);
+    }
+  }
+
+  Future<void> _executeOacpCommand(OacpCommand command) async {
+    debugPrint('OacpDart: _executeOacpCommand type=${command.type} duration=${command.durationSeconds}');
+    await _selectCameraForCommand(command.cameraPreference);
+
+    switch (command.type) {
+      case OacpCommandType.takePhoto:
+        if (_isVideoCameraSelectedNotifier.value) {
+          _isVideoCameraSelectedNotifier.value = false;
+        }
+        final countdown = command.durationSeconds ?? _defaultOacpPhotoCountdownSeconds;
+        debugPrint('OacpDart: calling takePicture with countdown=$countdown');
+        await takePicture(
+          countdownOverrideSeconds: countdown,
+        );
+        return;
+      case OacpCommandType.startVideoRecording:
+        if (!_isVideoCameraSelectedNotifier.value) {
+          _isVideoCameraSelectedNotifier.value = true;
+          await _initializeCameraController(
+            _cameraController!.description,
+          );
+        }
+        if (!(_cameraController?.value.isRecordingVideo ?? false)) {
+          await onVideoRecordButtonPressed();
+        }
+        return;
+    }
+  }
+
+  Future<void> _selectCameraForCommand(
+    OacpCameraPreference cameraPreference,
+  ) async {
+    final targetRearCamera = switch (cameraPreference) {
+      OacpCameraPreference.front => false,
+      OacpCameraPreference.rear => true,
+      OacpCameraPreference.appDefault =>
+        Preferences.getStartWithRearCamera(),
+    };
+
+    if (_isRearCameraSelectedNotifier.value != targetRearCamera) {
+      _isRearCameraSelectedNotifier.value = targetRearCamera;
+    }
+
+    final targetCamera =
+        _cameraDescriptionForRearSelection(targetRearCamera);
+    if (_cameraController == null ||
+        _cameraController!.description.name != targetCamera.name) {
+      await onNewCameraSelected(targetCamera);
+    }
+  }
+
+  CameraDescription _cameraDescriptionForRearSelection(
+    bool useRearCamera,
+  ) {
+    final preferredLensDirection = useRearCamera
+        ? CameraLensDirection.back
+        : CameraLensDirection.front;
+
+    return cameras.firstWhere(
+      (camera) => camera.lensDirection == preferredLensDirection,
+      orElse: () => cameras.first,
+    );
   }
 
   //Zoom

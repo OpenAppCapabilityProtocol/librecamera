@@ -16,6 +16,7 @@ import 'app_localizations_en.dart';
 import 'app_localizations_eo.dart';
 import 'app_localizations_es.dart';
 import 'app_localizations_eu.dart';
+import 'app_localizations_fi.dart';
 import 'app_localizations_fr.dart';
 import 'app_localizations_gl.dart';
 import 'app_localizations_grc.dart';
@@ -140,6 +141,7 @@ abstract class AppLocalizations {
     Locale('eo'),
     Locale('es'),
     Locale('eu'),
+    Locale('fi'),
     Locale('fr'),
     Locale('gl'),
     Locale('grc'),
@@ -757,6 +759,7 @@ class _AppLocalizationsDelegate
     'eo',
     'es',
     'eu',
+    'fi',
     'fr',
     'gl',
     'grc',
@@ -838,6 +841,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsEs();
     case 'eu':
       return AppLocalizationsEu();
+    case 'fi':
+      return AppLocalizationsFi();
     case 'fr':
       return AppLocalizationsFr();
     case 'gl':
