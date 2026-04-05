@@ -88,7 +88,6 @@ class OacpCommandService {
         durationSeconds: map['duration_seconds'] as int?,
       );
 
-      debugPrint('OacpDart: Received command: ${command.type} camera=${command.cameraPreference} duration=${command.durationSeconds}');
       debugPrint('OacpDart: command=${command.type} camera=${command.cameraPreference} duration=${command.durationSeconds}');
       _pendingCommand = command;
       _controller.add(command);

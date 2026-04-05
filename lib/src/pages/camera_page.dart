@@ -1214,7 +1214,8 @@ class _CameraPageState extends State<CameraPage>
     final pendingCommand =
         OacpCommandService.instance.consumePendingCommand();
     debugPrint('OacpDart: pendingCommand=${pendingCommand?.type}');
-    if (pendingCommand != null) {
+    if (pendingCommand != null &&
+        _handledOacpRequestIds.add(pendingCommand.requestId)) {
       await _executeOacpCommand(pendingCommand);
     }
   }
