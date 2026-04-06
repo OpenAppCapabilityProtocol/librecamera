@@ -178,13 +178,13 @@ class MainActivity : FlutterActivity() {
 
     private fun openItem(path: String, mimeType: String, openInGallery: Boolean) {
         val file = File(path)
-        var uri = FileProvider.getUriForFile(context, "com.iakmds.librecamera.provider", file)
+        var uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
         if (openInGallery) {
             uri = Uri.parse("content:/$path")
         }
 
         context.grantUriPermission(
-                "com.iakmds.librecamera",
+                context.packageName,
                 uri,
                 Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         )
